@@ -6,6 +6,8 @@ module Json.JsonChars
 , cBrace
 , colon
 , coma
+, dot
+, minus
 ) where
 
 import Text.ParserCombinators.ReadP
@@ -30,3 +32,10 @@ colon = char ':'
 
 coma :: ReadP Char
 coma = char ','
+
+-- floating point numbers
+dot :: ReadP Char
+dot = char '.'
+
+minus :: ReadP Char
+minus = char '-'

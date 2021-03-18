@@ -1,5 +1,7 @@
 module Json.JsonParser
 ( parse
+, int
+, float
 , number
 , boolean
 , str
@@ -19,15 +21,30 @@ import Data.Map as Map
 anyChar :: ReadP Char
 anyChar = satisfy (\_ -> True)
 
+digits :: ReadP String
+digits = munch1 Char.isDigit
+
 whiteSpace :: ReadP ()
 whiteSpace = munch Char.isSpace *> (pure ())
 
 -- Atomic types
 
 -- number
+sign :: (Num a) => ReadP (a -> a)
+sign = minus *> (return (\x -> -x)) <|> return (\x -> x)
+
+int :: ReadP JNum
+int = JsonInt <$> (sign <*> (read <$> digits))
+
+float :: ReadP JNum
+float = do
+  signFlip <- sign
+  base <- digits <* dot
+  decimal <- digits <++ return "0"
+  return $ (JsonFloat . signFlip . read . List.concat) [base, ".", decimal]
+
 number :: ReadP Json
-number =
-  fmap (JsonNum . read) $ munch1 Char.isDigit
+number = fmap JsonNum (float <++ int)
 
 
 -- boolean
@@ -54,7 +71,7 @@ notQuote = munch1 (\char -> char /= '\\' && char /= '"')
 escChar :: ReadP String
 escChar =
   let escQuote = fmap (\c -> [c]) $ char '\\' *> char '"' in
-  let escChar  = count 2 anyChar in
+  let escChar  = fmap (\c -> ['\\', c]) $ satisfy (\c -> c /= '"') *> anyChar in
   escQuote <++ escChar
 
 strPattern :: ReadP String
@@ -76,6 +93,7 @@ anyJson = object <|> array <|> str <|> boolean <|> number
 
 spacedAny :: ReadP Json
 spacedAny = spaced anyJson
+
 
 -- Array
 array :: ReadP Json

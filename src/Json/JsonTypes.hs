@@ -1,12 +1,15 @@
 module Json.JsonTypes
 ( Json(JsonObject, JsonArray, JsonStr, JsonNum, JsonBool)
+, JNum(JsonInt, JsonFloat)
 ) where
 
 import Data.Map(Map)
 import Data.Map as Map hiding (Map)
 import Data.List as List
+import GHC.Float as Float
 
-data Json = JsonObject (Map String Json) | JsonArray [Json] | JsonStr String | JsonNum Int | JsonBool Bool
+data JNum = JsonInt Int | JsonFloat Double
+data Json = JsonObject (Map String Json) | JsonArray [Json] | JsonStr String | JsonNum JNum | JsonBool Bool
 
 instance Show Json where
   show (JsonStr value)    = value
@@ -29,4 +32,15 @@ instance Eq Json where
   (JsonArray a)  == (JsonArray b)  = a == b
   (JsonObject a) == (JsonObject b) = a == b
   _ == _ = False
+  x /= y = not (x == y)
+
+instance Show JNum where
+  show (JsonInt value) = show value
+  show (JsonFloat value) = show value
+
+instance Eq JNum where
+  (JsonInt a)   == (JsonInt b)   = a == b
+  (JsonFloat a) == (JsonFloat b) = a == b
+  (JsonFloat a) == (JsonInt b)   = a == (Float.int2Double b)
+  (JsonInt a)   == (JsonFloat b) = b == (Float.int2Double a)
   x /= y = not (x == y)
