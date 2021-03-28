@@ -1,7 +1,11 @@
 import Test.HUnit
 import Json.ParserTest
+import Json.ConversionTest
 
-tests = testJsonParser
+tests = TestList
+  [ testJsonParser
+  , testJsonConversion
+  ]
 
 main :: IO ()
 main = do
