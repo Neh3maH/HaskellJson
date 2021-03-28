@@ -1,4 +1,4 @@
-module Json.JsonTypes
+module Json.Types
 ( Json(JsonObject, JsonArray, JsonStr, JsonNum, JsonBool)
 , JNum(JsonInt, JsonFloat)
 ) where

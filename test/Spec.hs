@@ -1,5 +1,5 @@
 import Test.HUnit
-import Json.JsonParserTest
+import Json.ParserTest
 
 tests = testJsonParser
 

@@ -1,11 +1,11 @@
-module Json.JsonParserTest
+module Json.ParserTest
 ( testJsonParser
 ) where
 
 import Test.HUnit
 import Text.ParserCombinators.ReadP
-import Json.JsonParser
-import Json.JsonTypes
+import Json.Parser
+import Json.Types
 import Data.Map as Map
 
 -- test numbers

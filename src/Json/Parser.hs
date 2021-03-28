@@ -1,4 +1,4 @@
-module Json.JsonParser
+module Json.Parser
 ( parse
 , int
 , float
@@ -12,8 +12,8 @@ module Json.JsonParser
 import Data.Char as Char
 import Text.ParserCombinators.ReadP
 import Control.Applicative hiding (many, optional)
-import Json.JsonTypes
-import Json.JsonChars
+import Json.Types
+import Json.SpecialChars
 import Data.List as List
 import Data.Map as Map
 
@@ -118,6 +118,7 @@ object = do
 parseOptions :: String -> [(Json, String)]
 parseOptions = readP_to_S object
 
+-- TODO: Add some better error handling
 parse :: String -> Maybe Json
 parse string = case (parseOptions string) of
   ((json, _): _) -> Just json

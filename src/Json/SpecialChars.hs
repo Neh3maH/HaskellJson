@@ -1,4 +1,4 @@
-module Json.JsonChars
+module Json.SpecialChars
 ( dQuote
 , oBracket
 , cBracket

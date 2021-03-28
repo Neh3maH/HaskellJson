@@ -2,4 +2,4 @@ module Json
 ( Json
 ) where
 
-import Json.JsonTypes
+import Json.Types(Json)
