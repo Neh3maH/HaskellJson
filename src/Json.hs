@@ -1,6 +1,6 @@
 module Json
 ( Json
-, JsonRead(..)
+, JsonConvertible(..)
 , parse
 ) where
 

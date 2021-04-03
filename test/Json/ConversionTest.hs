@@ -5,6 +5,8 @@ module Json.ConversionTest
 import Test.HUnit
 import Json.Conversion
 import Json.Types
+import Data.Map as Map
+import Data.Map(Map)
 
 -- test numbers conversions
 testIntSuccess      = TestCase (assertEqual "get an int from a JsonInt"
@@ -120,11 +122,63 @@ testArray = TestList
 
 
 -- test map conversions
-testMap = TestList []
+testHomogenousMap = TestCase (assertEqual "get an integer map"
+  (Right $ Map.fromList [("one", 1), ("two", 2)])
+  (fromJson (JsonObject $ Map.fromList [("one", JsonNum $ JsonInt 1), ("two", JsonNum $ JsonInt 2)]) :: JsonConversionReturn (Map String Int)))
+
+testMap = TestList
+  [ testHomogenousMap
+  ]
 
 
 -- test object conversions
-testObject = TestList []
+data TestObject = TestObject String Int Bool deriving (Eq, Show)
+instance JsonConvertible TestObject where
+  fromJson (JsonObject value) = case (Map.lookup "str" value, Map.lookup "int" value, Map.lookup "bool" value) of
+    (Just str, Just int, Just bool) -> case (fromJson str :: JsonConversionReturn String, fromJson int :: JsonConversionReturn Int, fromJson bool :: JsonConversionReturn Bool) of
+      (Right s, Right i, Right b) -> Right $ TestObject s i b
+      _                           -> jsonConversionError "TestObject"
+    _                               -> jsonConversionError "TestObject"
+  fromJson _ = jsonConversionError "TestObject"
+  toJson (TestObject str int bool) = JsonObject $ Map.fromList [("str", toJson str), ("int", toJson int), ("bool", toJson bool)]
+
+testSingleConstructorObject =
+  let testObj = TestObject "hello" 7 False in
+  TestCase (assertEqual "roundtrip an object with a single constructor"
+    (Right testObj)
+    (fromJson (toJson testObj) :: JsonConversionReturn TestObject)
+  )
+
+
+data TestObject' = A String | B Bool deriving (Eq, Show)
+instance JsonConvertible TestObject' where
+  fromJson (JsonObject value) = case (Map.lookup "type" value) of
+    Just (JsonStr "A") -> case (Map.lookup "str" value) of
+      Just str -> case (fromJson str :: JsonConversionReturn String) of
+        Right s   -> Right $ A s
+        _         -> jsonConversionError "TestObject'"
+      _         -> jsonConversionError "TestObject'"
+    Just (JsonStr "B") -> case (Map.lookup "bool" value) of
+      Just bool -> case (fromJson bool :: JsonConversionReturn Bool) of
+        Right b   -> Right $ B b
+        _         -> jsonConversionError "TestObject'"
+      _          -> jsonConversionError "TestObject'"
+    _ -> jsonConversionError "TestObject'"
+  fromJson _ = jsonConversionError "TestObject'"
+  toJson (A str)  = JsonObject $ Map.fromList [("type", JsonStr "A"), ("str", JsonStr str)]
+  toJson (B bool) = JsonObject $ Map.fromList [("type", JsonStr "B"), ("bool", JsonBool bool)]
+
+testMultipleConstructorObjectA =
+  let testObj = A "blop" in
+  TestCase (assertEqual "roundtrip an object with multiple constructors"
+    (Right testObj)
+    (fromJson (toJson testObj) :: JsonConversionReturn TestObject')
+  )
+
+testObject = TestList
+  [ testSingleConstructorObject
+  , testMultipleConstructorObjectA
+  ]
 
 testJsonConversion = TestList
   [ TestLabel "test numbers conversion" testNumber
