@@ -1,7 +1,10 @@
 module Json.Conversion
 ( JsonConvertible(..)
 , JsonConversionReturn
+, JsonConversionError
+, JsonConversionErrLog(..)
 , jsonConversionError
+, jsonConversionErrorObj
 , lookupJsonFields
 , json2Str
 , json2Int
@@ -20,43 +23,55 @@ import Json.Types
 
 import Data.Char(Char)
 
-type JsonConversionReturn a = Either String a
+data JsonConversionErrLog = ErrorCollection String [JsonConversionError] | WrongType String | MissingKey String String | AbsentKeySet String [String] deriving Eq
+type JsonConversionError = (Json, JsonConversionErrLog)
+type JsonConversionReturn a = Either JsonConversionError a
+
+instance Show JsonConversionErrLog where
+  show (WrongType t)            = "ERROR: expected a" ++ t
+  show (MissingKey t k)         = "ERROR: missing key " ++ k ++ " in " ++ t
+  show (AbsentKeySet t k)       = "ERROR: in " ++ t ++ " missing keys " ++ (show k)
+  -- TODO: Fix padding?
+  show (ErrorCollection t errs) = "ERROR: in " ++ t ++ ":\n\t" ++ (List.concat $ List.intersperse "\n\t" $ List.map show errs)
 
 class JsonConvertible a where
   fromJson :: Json -> JsonConversionReturn a
   toJson :: a -> Json
 
-jsonConversionError :: String -> JsonConversionReturn a
-jsonConversionError s = Left $ "ERROR: Not a " ++ s
+jsonConversionError :: Json -> JsonConversionErrLog -> JsonConversionReturn a
+jsonConversionError json log = Left $ (json, log)
+
+jsonConversionErrorObj :: Map String Json -> JsonConversionErrLog -> JsonConversionReturn a
+jsonConversionErrorObj map log = Left $ (JsonObject map, log)
 
 instance {-# OVERLAPPING #-} JsonConvertible String where
   fromJson (JsonStr str)               = Right str
   fromJson (JsonNum (JsonFloat value)) = Right $ show value
   fromJson (JsonNum (JsonInt value))   = Right $ show value
   fromJson (JsonBool value)            = Right $ show value
-  fromJson _ = jsonConversionError "string"
+  fromJson json = jsonConversionError json (WrongType "string")
   toJson str = JsonStr str
 
 instance JsonConvertible Int where
   fromJson (JsonNum (JsonInt value)) = Right value
-  fromJson _ = jsonConversionError "int"
+  fromJson json = jsonConversionError json (WrongType "int")
   toJson value = JsonNum $ JsonInt value
 
 instance JsonConvertible Double where
   fromJson (JsonNum (JsonFloat value)) = Right value
   fromJson (JsonNum (JsonInt value))   = Right $ Float.int2Double value
-  fromJson _ = jsonConversionError "double"
+  fromJson json = jsonConversionError json (WrongType "float")
   toJson value = JsonNum $ JsonFloat value
 
 instance JsonConvertible Float where
   fromJson (JsonNum (JsonFloat value)) = Right $ Float.double2Float value
   fromJson (JsonNum (JsonInt value))   = Right $ Float.int2Float value
-  fromJson _ = jsonConversionError "float"
+  fromJson json = jsonConversionError json (WrongType "float")
   toJson value = JsonNum $ JsonFloat $ Float.float2Double value
 
 instance JsonConvertible Bool where
   fromJson (JsonBool value) = Right value
-  fromJson _ = jsonConversionError "boolean"
+  fromJson json = jsonConversionError json (WrongType "boolean")
   toJson value = JsonBool value
 
 instance {-# OVERLAPPABLE #-} (JsonConvertible a) => JsonConvertible [a] where
@@ -65,14 +80,14 @@ instance {-# OVERLAPPABLE #-} (JsonConvertible a) => JsonConvertible [a] where
     case Either.partitionEithers eitherValues of
       ([], ret)   -> Right ret
       (err:xs, _) -> Left err
-  fromJson _ = jsonConversionError "list"
+  fromJson json = jsonConversionError json (WrongType "list")
   toJson values = JsonArray $ List.map toJson values
 
 instance (k ~ [Char], JsonConvertible v) => JsonConvertible (Map k v) where
   fromJson (JsonObject value) = case Map.mapEither fromJson value of
     (error, ret) | Map.null error -> Right ret
-    (_, _)                        -> jsonConversionError "map"
-  fromJson _ = jsonConversionError "map"
+    (error, _)                        -> jsonConversionError (JsonObject value) (ErrorCollection "map" $ Map.elems error)
+  fromJson json = jsonConversionError json (WrongType "map")
   toJson value = JsonObject $ Map.map toJson value
 
 lookupJsonFields :: Map String a -> [String] -> Maybe [a]

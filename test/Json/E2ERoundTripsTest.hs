@@ -9,8 +9,10 @@ import Json.Types
 import Json.TestObjects
 
 
-fun :: (JsonConvertible a) => (Json -> JsonConversionReturn a) -> a -> Either String a
-fun jsonConversion value = maybe (Left "failure") jsonConversion $ parse . show . toJson $ value
+fun :: (JsonConvertible a) => (Json -> JsonConversionReturn a) -> a -> JsonConversionReturn a
+fun jsonConversion value =
+  let error = jsonConversionError (toJson value) (WrongType "idk it failed") in
+  maybe error jsonConversion $ parse . show . toJson $ value
 
 testRoundTripObject =
   let object = TestObject "hello" 2 False in

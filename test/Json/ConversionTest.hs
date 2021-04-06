@@ -14,12 +14,16 @@ import Json.TestObjects
 testIntSuccess      = TestCase (assertEqual "get an int from a JsonInt"
   (Right 1)
   (json2Int $ JsonNum $ JsonInt 1))
-testIntFailureFloat = TestCase (assertEqual "fail on getting an int from a JsonFloat"
-  (jsonConversionError "int")
-  (json2Int $ JsonNum $ JsonFloat 1.0))
-testIntFailure      = TestCase (assertEqual "fail on getting an int from not a JsonInt"
-  (jsonConversionError "int")
-  (json2Int $ JsonStr "hello"))
+testIntFailureFloat =
+  let value = JsonNum $ JsonFloat 1.0 in
+  TestCase (assertEqual "fail on getting an int from a JsonFloat"
+    (jsonConversionError value (WrongType "int"))
+    (json2Int value))
+testIntFailure      =
+  let value = JsonStr "hello" in
+  TestCase (assertEqual "fail on getting an int from not a JsonInt"
+    (jsonConversionError value (WrongType "int"))
+    (json2Int value))
 
 testIntegers = TestList
   [ testIntSuccess
@@ -33,9 +37,11 @@ testFloatSuccess    = TestCase (assertEqual "get a float from a JsonFloat"
 testFloatFromInt    = TestCase (assertEqual "get a frloat from a JsonInt"
   (Right 3)
   (json2Float $ JsonNum $ JsonInt 3))
-testFloatFailure    = TestCase (assertEqual "fail on getting a float from not a JsonNum"
-  (jsonConversionError "float")
-  (json2Float $ JsonStr "hello"))
+testFloatFailure    =
+  let value = JsonStr "hello" in
+  TestCase (assertEqual "fail on getting a float from not a JsonNum"
+    (jsonConversionError value (WrongType "float"))
+    (json2Float $ value))
 
 testFloats = TestList
   [ testFloatSuccess
@@ -49,9 +55,11 @@ testDoubleSuccess    = TestCase (assertEqual "get a double from a JsonFloat"
 testDoubleFromInt    = TestCase (assertEqual "get a frloat from a JsonInt"
   (Right 3)
   (json2Double $ JsonNum $ JsonInt 3))
-testDoubleFailure    = TestCase (assertEqual "fail on getting a double from not a JsonNum"
-  (jsonConversionError "double")
-  (json2Double $ JsonStr "hello"))
+testDoubleFailure    =
+  let value = JsonStr "hello" in
+  TestCase (assertEqual "fail on getting a double from not a JsonNum"
+    (jsonConversionError value (WrongType "float"))
+    (json2Double value))
 
 testDoubles = TestList
   [ testDoubleSuccess
@@ -73,9 +81,11 @@ testTrue        = TestCase (assertEqual "get a true value"
 testFalse       = TestCase (assertEqual "get a false value"
   (Right False)
   (json2Bool $ JsonBool False))
-testBoolFailure = TestCase (assertEqual "fail on getting a boolean from not a JsonBool"
-  (jsonConversionError "boolean")
-  (json2Bool $ JsonStr "hello"))
+testBoolFailure =
+  let value = JsonStr "hello" in
+  TestCase (assertEqual "fail on getting a boolean from not a JsonBool"
+    (jsonConversionError value (WrongType "boolean"))
+    (json2Bool value))
 
 testBoolean = TestList
   [ testTrue
