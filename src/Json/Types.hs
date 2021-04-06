@@ -14,7 +14,7 @@ data Json = JsonObject (Map String Json) | JsonArray [Json] | JsonStr String | J
 
 
 instance Show Json where
-  show (JsonStr value)    = value
+  show (JsonStr value)    = '"' : value ++ ['"']
   show (JsonNum value)    = show value
   show (JsonBool value)   = show value
   show (JsonArray [])     = "[]"
@@ -23,8 +23,8 @@ instance Show Json where
     "[" ++ valueStr ++ "]"
   show (JsonObject value) | Map.null value = "{}"
   show (JsonObject value) =
-    let showKV k v = (show k) ++ ":" ++ (show v) in
-    let valueStr = Map.foldlWithKey (\acc k v -> acc ++ (showKV k v)) "" value in
+    let showKV (k, v) = (show k) ++ ":" ++ (show v) in
+    let valueStr = List.concat $ List.intersperse "," $ List.map showKV $ Map.toList value in
     "{" ++ valueStr ++ "}"
 
 instance Eq Json where
@@ -59,6 +59,6 @@ prettyprint (JsonArray value)  =
   "[" ++ valueStr ++ "\n]"
 prettyprint (JsonObject value) | Map.null value = "{}"
 prettyprint (JsonObject value) =
-  let prettyprintKV k v = k ++ ": " ++ (prettyprint v) in
-  let valueStr = Map.foldlWithKey (\acc k v -> acc ++ (prettyprintKV k v) ++ "\n") "" value in
+  let prettyprintKV (k, v) = k ++ ": " ++ (prettyprint v) in
+  let valueStr = List.concat $ List.intersperse ",\n" $ List.map prettyprintKV $ Map.toList value in
   "{\n" ++ valueStr ++ "}"
