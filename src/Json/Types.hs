@@ -1,6 +1,7 @@
 module Json.Types
 ( Json(JsonObject, JsonArray, JsonStr, JsonNum, JsonBool)
 , JNum(JsonInt, JsonFloat)
+, prettyprint
 ) where
 
 import Data.Map(Map)
@@ -11,19 +12,20 @@ import GHC.Float as Float
 data JNum = JsonInt Int | JsonFloat Double
 data Json = JsonObject (Map String Json) | JsonArray [Json] | JsonStr String | JsonNum JNum | JsonBool Bool
 
+
 instance Show Json where
   show (JsonStr value)    = value
   show (JsonNum value)    = show value
   show (JsonBool value)   = show value
   show (JsonArray [])     = "[]"
   show (JsonArray value)  =
-    let valueStr = List.concat $ List.map (\e -> '\n' : (show e)) value in
-    "[\n" ++ valueStr ++ "\n]"
+    let valueStr = List.concat $ List.map (\e -> (show e)) value in
+    "[" ++ valueStr ++ "]"
   show (JsonObject value) | Map.null value = "{}"
   show (JsonObject value) =
-    let showKV k v = (show k) ++ ": " ++ (show v) in
-    let valueStr = Map.foldlWithKey (\acc k v -> acc ++ (showKV k v) ++ "\n") "" value in
-    "{\n" ++ valueStr ++ "}"
+    let showKV k v = (show k) ++ ":" ++ (show v) in
+    let valueStr = Map.foldlWithKey (\acc k v -> acc ++ (showKV k v)) "" value in
+    "{" ++ valueStr ++ "}"
 
 instance Eq Json where
   (JsonStr a)    == (JsonStr b)    = a == b
@@ -44,3 +46,19 @@ instance Eq JNum where
   (JsonFloat a) == (JsonInt b)   = a == (Float.int2Double b)
   (JsonInt a)   == (JsonFloat b) = b == (Float.int2Double a)
   x /= y = not (x == y)
+
+
+-- Todo padding
+prettyprint :: Json -> String
+prettyprint (JsonStr value)    = value
+prettyprint (JsonNum value)    = show value
+prettyprint (JsonBool value)   = show value
+prettyprint (JsonArray [])     = "[]"
+prettyprint (JsonArray value)  =
+  let valueStr = List.concat $ List.map (\e -> '\n' : (prettyprint e)) value in
+  "[" ++ valueStr ++ "\n]"
+prettyprint (JsonObject value) | Map.null value = "{}"
+prettyprint (JsonObject value) =
+  let prettyprintKV k v = k ++ ": " ++ (prettyprint v) in
+  let valueStr = Map.foldlWithKey (\acc k v -> acc ++ (prettyprintKV k v) ++ "\n") "" value in
+  "{\n" ++ valueStr ++ "}"
