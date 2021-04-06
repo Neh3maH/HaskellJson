@@ -138,14 +138,14 @@ testSingleConstructorObject =
   let testObj = TestObject "hello" 7 False in
   TestCase (assertEqual "roundtrip an object with a single constructor"
     (Right testObj)
-    (fromJson (toJson testObj) :: JsonConversionReturn TestObject)
+    (json2TestObject (toJson testObj))
   )
 
 testMultipleConstructorObjectA =
   let testObj = A "blop" in
   TestCase (assertEqual "roundtrip an object with multiple constructors"
     (Right testObj)
-    (fromJson (toJson testObj) :: JsonConversionReturn TestMultCtors)
+    (json2TestMultCtors (toJson testObj))
   )
 
 testObject = TestList

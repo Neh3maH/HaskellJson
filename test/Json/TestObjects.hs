@@ -1,6 +1,8 @@
 module Json.TestObjects
 ( TestObject(..)
 , TestMultCtors(..)
+, json2TestObject
+, json2TestMultCtors
 ) where
 
 import Data.Map as Map
@@ -15,6 +17,9 @@ instance JsonConvertible TestObject where
     _ -> jsonConversionError "TestObject"
   fromJson _ = jsonConversionError "TestObject"
   toJson (TestObject str int bool) = JsonObject $ Map.fromList [("str", toJson str), ("int", toJson int), ("bool", toJson bool)]
+
+json2TestObject :: Json -> JsonConversionReturn TestObject
+json2TestObject = fromJson :: Json -> JsonConversionReturn TestObject
 
 
 data TestMultCtors = A String | B Bool deriving (Eq, Show)
@@ -31,3 +36,6 @@ instance JsonConvertible TestMultCtors where
   fromJson _ = jsonConversionError "TestMultCtors"
   toJson (A str)  = JsonObject $ Map.fromList [("type", JsonStr "A"), ("str", JsonStr str)]
   toJson (B bool) = JsonObject $ Map.fromList [("type", JsonStr "B"), ("bool", JsonBool bool)]
+
+json2TestMultCtors :: Json -> JsonConversionReturn TestMultCtors
+json2TestMultCtors = fromJson :: Json -> JsonConversionReturn TestMultCtors
