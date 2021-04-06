@@ -1,8 +1,14 @@
 module Json.TestObjects
 ( TestObject(..)
 , TestMultCtors(..)
+, TestListObject(..)
+, TestNested(..)
+, TestNestedList(..)
 , json2TestObject
 , json2TestMultCtors
+, json2TestListObject
+, json2TestNested
+, json2TestNestedList
 ) where
 
 import Data.Map as Map
@@ -39,3 +45,42 @@ instance JsonConvertible TestMultCtors where
 
 json2TestMultCtors :: Json -> JsonConversionReturn TestMultCtors
 json2TestMultCtors = fromJson :: Json -> JsonConversionReturn TestMultCtors
+
+data TestListObject = TestListObject [Int] deriving (Eq, Show)
+
+instance JsonConvertible TestListObject where
+  fromJson (JsonObject value) =
+    let content = maybe (jsonConversionError "TestListObject at maybe") (\x -> fromJson x :: JsonConversionReturn [Int]) (Map.lookup "lst" value) in
+    TestListObject <$> content
+  fromJson _ = jsonConversionError "TestListObject"
+  toJson (TestListObject value) = JsonObject $ Map.singleton "lst" (toJson value)
+
+json2TestListObject :: Json -> JsonConversionReturn TestListObject
+json2TestListObject = fromJson :: Json -> JsonConversionReturn TestListObject
+
+
+data TestNested = TestNested TestObject deriving (Eq, Show)
+
+instance JsonConvertible TestNested where
+  fromJson (JsonObject value) =
+    let content = maybe (jsonConversionError "TestListObject at maybe") (\x -> fromJson x :: JsonConversionReturn TestObject) (Map.lookup "internal" value) in
+    TestNested <$> content
+  fromJson _ = jsonConversionError "TestNested"
+  toJson (TestNested value) = JsonObject $ Map.singleton "internal" (toJson value)
+
+json2TestNested :: Json -> JsonConversionReturn TestNested
+json2TestNested = fromJson :: Json -> JsonConversionReturn TestNested
+
+
+data TestNestedList = TestNestedList [TestMultCtors] deriving (Eq, Show)
+
+instance JsonConvertible TestNestedList where
+  fromJson (JsonObject value) =
+    let content = maybe (jsonConversionError "TestListNested at maybe") (\x -> fromJson x :: JsonConversionReturn [TestMultCtors]) (Map.lookup "lst" value) in
+    TestNestedList <$> content
+  fromJson _ = jsonConversionError "TestListNested"
+  toJson (TestNestedList value) = JsonObject $ Map.singleton "lst" (toJson value)
+
+json2TestNestedList :: Json -> JsonConversionReturn TestNestedList
+json2TestNestedList = fromJson :: Json -> JsonConversionReturn TestNestedList
+
