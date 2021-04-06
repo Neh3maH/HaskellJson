@@ -8,6 +8,7 @@ import Json.Types
 import Data.Map as Map
 import Data.Map(Map)
 import Control.Applicative
+import Json.TestObjects
 
 -- test numbers conversions
 testIntSuccess      = TestCase (assertEqual "get an int from a JsonInt"
@@ -133,14 +134,6 @@ testMap = TestList
 
 
 -- test object conversions
-data TestObject = TestObject String Int Bool deriving (Eq, Show)
-instance JsonConvertible TestObject where
-  fromJson (JsonObject value) = case lookupJsonFields value ["str", "int", "bool"] of
-    Just [str, int, bool] -> (TestObject <$> (json2Str str)) <*> (json2Int int) <*> (json2Bool bool)
-    _ -> jsonConversionError "TestObject"
-  fromJson _ = jsonConversionError "TestObject"
-  toJson (TestObject str int bool) = JsonObject $ Map.fromList [("str", toJson str), ("int", toJson int), ("bool", toJson bool)]
-
 testSingleConstructorObject =
   let testObj = TestObject "hello" 7 False in
   TestCase (assertEqual "roundtrip an object with a single constructor"
@@ -148,26 +141,11 @@ testSingleConstructorObject =
     (fromJson (toJson testObj) :: JsonConversionReturn TestObject)
   )
 
-
-data TestObject' = A String | B Bool deriving (Eq, Show)
-instance JsonConvertible TestObject' where
-  fromJson (JsonObject value) = case (Map.lookup "type" value) of
-    Just (JsonStr "A") ->
-      let toTestObject json = A <$> (json2Str json) in
-      maybe (jsonConversionError "testObject'") toTestObject (Map.lookup "str" value)
-    Just (JsonStr "B") ->
-      let toTestObject json = B <$> (json2Bool json) in
-      maybe (jsonConversionError "testObject'") toTestObject (Map.lookup "bool" value)
-    _ -> jsonConversionError "TestObject'"
-  fromJson _ = jsonConversionError "TestObject'"
-  toJson (A str)  = JsonObject $ Map.fromList [("type", JsonStr "A"), ("str", JsonStr str)]
-  toJson (B bool) = JsonObject $ Map.fromList [("type", JsonStr "B"), ("bool", JsonBool bool)]
-
 testMultipleConstructorObjectA =
   let testObj = A "blop" in
   TestCase (assertEqual "roundtrip an object with multiple constructors"
     (Right testObj)
-    (fromJson (toJson testObj) :: JsonConversionReturn TestObject')
+    (fromJson (toJson testObj) :: JsonConversionReturn TestMultCtors)
   )
 
 testObject = TestList
