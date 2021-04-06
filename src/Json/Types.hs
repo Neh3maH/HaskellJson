@@ -19,7 +19,7 @@ instance Show Json where
   show (JsonBool value)   = show value
   show (JsonArray [])     = "[]"
   show (JsonArray value)  =
-    let valueStr = List.concat $ List.map (\e -> (show e)) value in
+    let valueStr = List.concat $ List.intersperse "," $ List.map (\e -> (show e)) value in
     "[" ++ valueStr ++ "]"
   show (JsonObject value) | Map.null value = "{}"
   show (JsonObject value) =
@@ -50,15 +50,22 @@ instance Eq JNum where
 
 -- Todo padding
 prettyprint :: Json -> String
-prettyprint (JsonStr value)    = value
-prettyprint (JsonNum value)    = show value
-prettyprint (JsonBool value)   = show value
-prettyprint (JsonArray [])     = "[]"
-prettyprint (JsonArray value)  =
-  let valueStr = List.concat $ List.map (\e -> '\n' : (prettyprint e)) value in
+prettyprint = paddedprettyprint 0
+
+padding :: Int -> String
+padding x = List.take x (List.repeat '\t')
+
+paddedprettyprint :: Int -> Json -> String
+paddedprettyprint _ (JsonStr value)    = value
+paddedprettyprint _ (JsonNum value)    = show value
+paddedprettyprint _ (JsonBool value)   = show value
+paddedprettyprint _ (JsonArray [])     = "[]"
+paddedprettyprint depth (JsonArray value)  =
+  let valueStr = List.concat $ List.map (\e -> padding (depth + 1) ++ ('\n' : (prettyprint e))) value in
   "[" ++ valueStr ++ "\n]"
-prettyprint (JsonObject value) | Map.null value = "{}"
-prettyprint (JsonObject value) =
-  let prettyprintKV (k, v) = k ++ ": " ++ (prettyprint v) in
+paddedprettyprint depth (JsonObject value) =
+  let padElems = padding $ depth + 1 in
+  let pad = padding depth in
+  let prettyprintKV (k, v) = padElems ++ k ++ ": " ++ (prettyprint v) in
   let valueStr = List.concat $ List.intersperse ",\n" $ List.map prettyprintKV $ Map.toList value in
   "{\n" ++ valueStr ++ "}"
