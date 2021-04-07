@@ -10,6 +10,7 @@ module Json
 , json2Double
 , json2Float
 , json2Bool
+, prettyprint
 ) where
 
 import Json.Types
